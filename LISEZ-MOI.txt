@@ -1,0 +1,51 @@
+PÂTISSERIE – VERSION PARTAGÉE (Android + iPhone)
+================================================
+
+Cette version garde l'interface d'origine et remplace le stockage isolé du navigateur par une base Supabase partagée. Chaque personne utilise son propre e-mail et mot de passe. Tous les comptes connectés ont les mêmes droits dans l'application : voir, ajouter, modifier et supprimer les produits, commandes, tickets café et paramètres.
+
+IMPORTANT : le fichier n'est pas encore connecté à votre projet Supabase ni publié sur Internet. Il faut faire les étapes ci-dessous une fois.
+
+1) CRÉER LA BASE DE DONNÉES
+- Ouvrez https://supabase.com et créez un projet.
+- Dans votre projet, ouvrez SQL Editor > New query.
+- Ouvrez le fichier supabase_setup.sql, copiez tout son contenu et exécutez-le.
+- Le script crée la table partagée, les règles d'accès et active les notifications Realtime.
+
+2) RÉCUPÉRER LES DEUX VALEURS DE CONNEXION
+- Dans le tableau de bord Supabase, récupérez le Project URL.
+- Ouvrez Settings > API Keys et copiez la Publishable key (elle commence normalement par sb_publishable_).
+- N'utilisez JAMAIS la Secret key ou service_role key dans le fichier HTML. La clé Publishable est prévue pour le navigateur; les règles RLS du SQL protègent la base.
+
+3) CONNECTER LE FICHIER
+- Ouvrez index.html dans un éditeur de texte.
+- Au début du JavaScript, trouvez les constantes :
+  SUPABASE_URL='PASTE_YOUR_SUPABASE_PROJECT_URL_HERE'
+  SUPABASE_PUBLISHABLE_KEY='PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE'
+- Remplacez uniquement les deux textes entre apostrophes par vos vraies valeurs.
+- Gardez STORE_ID='patisserie-main'. Tous les utilisateurs de cette application rejoignent ce même espace partagé.
+- Enregistrez index.html.
+
+4) CRÉER LES COMPTES
+- Dans Supabase > Authentication > Sign In / Providers, activez le fournisseur Email.
+- Le fichier est configuré avec ALLOW_SIGNUP=false pour empêcher les inscriptions publiques depuis le lien du site.
+- Dans Supabase > Authentication > Users > Add user > Send invitation, invitez chaque personne autorisée. Elle recevra un e-mail pour créer son accès et son mot de passe.
+- Tous les comptes auront exactement les mêmes droits dans l'application : voir, ajouter, modifier et supprimer les données partagées.
+- Gardez les inscriptions publiques désactivées dans les réglages Auth de Supabase. Pour ajouter plus tard une personne, envoyez-lui une invitation depuis Authentication > Users.
+
+5) PUBLIER GRATUITEMENT LE SITE
+- Allez sur Cloudflare Pages et choisissez Direct Upload / Upload assets.
+- Téléversez index.html (seul fichier nécessaire à l'hébergement).
+- Cloudflare fournit un lien pages.dev. Ouvrez exactement le même lien sur Android, iPhone Safari et iPhone Brave.
+- La première connexion se fait dans le navigateur. Les données ne seront plus séparées entre les téléphones : elles viennent de Supabase.
+
+6) RÉCUPÉRER LES ANCIENNES DONNÉES
+- Dans l'ancienne application, sur l'appareil qui contient les données, ouvrez Paramètres > Sauvegarder les données. Cela télécharge un fichier JSON.
+- Dans la nouvelle application déjà connectée, ouvrez Paramètres > Restaurer une sauvegarde et choisissez ce JSON.
+- Faites cette importation une seule fois pour éviter de dupliquer les données.
+
+À SAVOIR
+- Les changements des utilisateurs connectés sont synchronisés en direct via Realtime.
+- La numérotation des nouvelles commandes/tickets utilise un suffixe unique pour limiter les doublons lorsque deux personnes créent un ticket en même temps.
+- Les photos des produits sont stockées dans les données JSON de la base (images compressées dans le navigateur). Pour un grand catalogue de photos, un stockage objet dédié serait préférable.
+- Faites régulièrement une sauvegarde depuis Paramètres > Sauvegarder les données.
+- La formule gratuite de l'hébergeur/base peut avoir des limites et conditions qui changent; vérifiez les quotas affichés dans vos comptes.
