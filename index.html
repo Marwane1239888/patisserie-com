@@ -104,63 +104,77 @@ $('#modal').innerHTML=S.modal?`<div class=ov><div class=box>${S.modal}</div></di
 const tkt=s=>`<div class=tk>${S.set.logo&&sh('logo')?`<img class=logo src="${S.set.logo}" style="display:block;margin:0 auto 4px">`:''}<h2>${esc(S.set.shop)}</h2>${sh('addr')?`<div class=c>${esc(S.set.addr||'')}</div>`:''}<div class="c dl">${s.no} · ${s.date} ${s.time}</div>${s.items.map(i=>`<div class=ln><div><b>${esc(i.name)}</b><br><span>${i.qty} × ${fm(i.price)}</span></div><b>${fm(i.qty*i.price)}</b></div>`).join('')}<div class=gt><span>${t('total')}</span><span>${fm(s.total)}</span></div>${sh('msg')?`<p class=ty>${esc(S.set.msg||t('thanks'))}</p>`:''}</div>`,
 prt=s=>{$('#pgs').textContent='@page{size:80mm auto;margin:0}';$('#pr').innerHTML=tkt(s);setTimeout(()=>print(),80)},
 cman=()=>`<h3>${t('ctypes')}</h3>${S.coffees.map(c=>`<div class=row><span class=gr>${esc(c.name)} · ${fm(c.price)}</span><button data-a=cedit data-id=${c.id}>✏️</button><button data-a=cdel2 data-id=${c.id}>🗑</button></div>`).join('')}<div class=card><input id=cn placeholder="${t('pname')}"><input id=cp type=number step=any min=0 placeholder="${t('pprice')} (DH)"><button class="big gold" data-a=cnew>＋ ${t('cadd')}</button></div><button class=big data-a=x>${t('close')}</button>`;
-V.cafe=()=>{const tl=S.tk.reduce((s,i)=>s+i.qty*i.price,0),ds=S.sales.filter(s=>s.date==S.cd).sort((a,b)=>b.ts-a.ts);return`<div class=row><h2>☕ ${t('cafe')}</h2><button data-a=cman>⚙️ ${t('ctypes')}</button></div><div class=grid>${S.coffees.map(c=>`<button class=gold style="width:100%;flex-direction:column;min-height:72px" data-a=cadd data-id=${c.id}>${esc(c.name)}<small>${fm(c.price)}</small></button>`).join('')||`<p class=mut>${t('cnone2')}</p>`}</div><div class=card>${S.tk.map((i,k)=>`<div class=row><span class=gr>${esc(i.name)} <span class=mut>${fm(i.price)}</span></span><button data-a=cq data-id=${k} data-d=-1>−</button><b>${i.qty}</b><button data-a=cq data-id=${k} data-d=1>＋</button><b>${fm(i.qty*i.price)}</b></div>`).join('')}<div class=row><h3>${t('total')}</h3><h3>${fm(tl)}</h3></div></div><div class=acts><button class=gold data-a=csave>✓ ${t('enc')}</button><button data-a=csp>🖨 ${t('enc')} + ${t('print')}</button><button data-a=cclr>${t('clr')}</button></div><h3>${t('ctoday')}</h3><input type=date data-i=cd value="${S.cd}"><div class=st><b>${fm(ds.reduce((a,s)=>a+s.total,0))}</b>${t('cdt')} · ${ds.length}</div>${ds.map(s=>`<div class="card row"><span class=gr><b>${s.no}</b> · ${s.time}<br><span class=mut>${s.items.map(i=>`${esc(i.name)}×${i.qty}`).join(', ')}</span></span><b>${fm(s.total)}</b><button data-a=cpr data-id=${s.id}>🖨</button><button data-a=cpdf data-id=${s.id}>📄</button><button data-a=cdel data-id=${s.id}>🗑</button></div>`).join('')}`};
-const A={};
-A.cadd=id=>{const c=S.coffees.find(c=>c.id==id),i=S.tk.find(i=>i.cid==id);i?i.qty++:S.tk.push({cid:id,name:c.name,qty:1,price:c.price});render()};
-A.cq=(id,b)=>{const i=S.tk[id];i.qty+=+b.dataset.d;if(i.qty<1)S.tk.splice(id,1);render()};
-A.cclr=()=>{S.tk=[];render()};
-A.csave=async(_,__,p)=>{if(!S.tk.length)return toast(t('none'));S.set.tseq=(S.set.tseq||0)+1;const s={id:uid(),ts:Date.now(),date:T(),time:new Date().toTimeString().slice(0,5),no:'T-'+uid().slice(-6).toUpperCase(),items:S.tk,total:S.tk.reduce((a,i)=>a+i.qty*i.price,0)};await put('kv',S.set);await put('sales',s);S.sales=await all('sales');S.tk=[];S.cd=T();render();toast('✓');if(p)prt(s)};
-A.csp=()=>A.csave(0,0,1);
-A.cpr=id=>prt(S.sales.find(s=>s.id==id));
-A.cdel=id=>ask(t('sure'),async()=>{await del('sales',id);S.sales=await all('sales')});
-A.cman=()=>{S.ce=0;S.modal=cman();render()};
-A.cedit=id=>{const c=S.coffees.find(c=>c.id==id);S.ce=id;$('#cn').value=c.name;$('#cp').value=c.price};
-A.cnew=async()=>{const name=$('#cn').value.trim(),price=+$('#cp').value;if(!name||!(price>0))return toast(t('cerr'));await put('coffees',{id:S.ce||uid(),name,price});S.ce=0;S.coffees=await all('coffees');S.modal=cman();render()};
-A.cdel2=id=>ask(t('sure'),async()=>{await del('coffees',id);S.coffees=await all('coffees')});
-A.go=id=>{if(id=='form'&&!S.dr)S.dr=blank();S.v=id;render()};A.new=()=>{S.dr=blank();S.v='form';render()};
-A.edit=id=>{S.dr=structuredClone(S.orders.find(o=>o.id==id));S.v='form';render()};
-A.addp=()=>{S.dr.items.push({pid:'',name:'',img:'',qty:1,price:0});render()};
-A.rm=(_,b)=>{S.dr.items.splice(b.dataset.k,1);if(!S.dr.items.length)S.dr.items.push(blank().items[0]);render()};
-A.save=async(_,__,p)=>{const d=S.dr,ok=d.items.filter(i=>i.pid&&i.qty>0);if(!d.name.trim()||!ok.length)return toast(t('err'));d.items=ok;if(!d.id){d.id=uid();d.ts=Date.now();S.set.seq=(S.set.seq||0)+1;d.no='CMD-'+d.date.slice(0,4)+'-'+uid().slice(-6).toUpperCase();await put('kv',S.set)}await put('orders',d);S.orders=await all('orders');S.dr=null;S.v='orders';render();toast('✓');if(p){A.inv(d.id);A.print(d.id)}};
-A.savep=()=>A.save(0,0,1);
-A.inv=id=>{const o=S.orders.find(o=>o.id==id);S.modal=`${inv(o)}<div class=acts><button class=gold data-a=print data-id=${id}>🖨 ${t('print')}</button><button data-a=pdf1 data-id=${id}>📄 PDF</button><a class=btn target=_blank rel=noopener href="${wa(o)}">WhatsApp</a><button data-a=x>${t('close')}</button></div>`;render()};
-A.print=id=>pr([S.orders.find(o=>o.id==id)]);
-A.del=id=>ask(t('sure'),async()=>{await del('orders',id);S.orders=await all('orders')});
-A.pay=async id=>{const o=S.orders.find(o=>o.id==id);o.deposit=tot(o);await put('orders',o);render()};
-A.yes=async()=>{await S.cb();A.x()};A.x=()=>{S.modal='';render()};A.f=id=>{S.f=id;render()};
-A.padd=()=>{S.pf={name:'',cat:'',desc:'',price:0,unit:'pièce',img:''};S.modal=pform();render()};
-A.pedit=id=>{S.pf={...S.products.find(p=>p.id==id)};S.modal=pform();render()};
-A.psave=async()=>{const p=S.pf;if(!p.name.trim()||!(p.price>0))return toast(t('err'));if(!p.id)p.id=uid();await put('products',p);S.products=await all('products');A.x()};
-A.pdel=id=>ask(t('sure'),async()=>{await del('products',id);S.products=await all('products')});
-A.calc=()=>{S.modal=calcM();render()};
-A.k=k=>{if(k=='C')S.calc='';else if(k=='⌫')S.calc=S.calc.slice(0,-1);else if(k=='='){try{if(!/^[\d+\-*/.()% ]+$/.test(S.calc))throw 0;S.calc=String(Math.round(Function('return('+S.calc.replace(/(\d+\.?\d*)%/g,'($1/100)')+')')()*1e8)/1e8)}catch{S.calc='Err'}}else S.calc=(S.calc=='Err'?'':S.calc)+k;$('#cd').textContent=S.calc||'0'};
-A.rp=()=>{const l=rng().filter(live);l.length?pdf(l,0,'factures-'+S.from+'_'+S.to+'.pdf'):toast(t('none'))};
-A.csv=()=>dlf('rapport-'+S.from+'_'+S.to+'.csv','\ufeffN°;Date;Client;Tél;Statut;Total;Payé;Reste\n'+rng().map(o=>[o.no,o.date,o.name,o.phone,t('st_'+o.status),tot(o),+o.deposit||0,bal(o)].map(x=>`"${String(x).replace(/"/g,'""')}"`).join(';')).join('\n'));
-A.bk=()=>dlf('sauvegarde-'+T()+'.json',JSON.stringify({products:S.products,orders:S.orders,coffees:S.coffees,sales:S.sales,set:S.set}));
-A.th=id=>{S.set.theme=id;put('kv',S.set);render()};A.thr=()=>{S.set.theme='';S.set.tc={};put('kv',S.set);render()};A.ivr=()=>{S.set.iv={};put('kv',S.set);render()};
-A.pdf1=id=>{const o=S.orders.find(o=>o.id==id);pdf([o],0,o.no+'.pdf')};A.cpdf=id=>{const s=S.sales.find(s=>s.id==id);pdf([s],1,s.no+'.pdf')};
-A.dk=()=>{S.set.theme=S.set.theme=='dark'?'cream':'dark';put('kv',S.set);render()};
-A.lang=id=>{S.set.lang=id;put('kv',S.set);render()};A.lk=()=>A.logout();
-A.authmode=id=>{if(id==='signup'&&!ALLOW_SIGNUP)return toast('Les inscriptions sont fermées');S.authMode=id;render()};
-A.authsubmit=async()=>{try{const email=$('#auth-email').value.trim(),password=$('#auth-password').value;if(!email||!password)return toast('Saisissez votre e-mail et votre mot de passe');if(S.authMode==='signup'){if(password.length<8)return toast('Mot de passe : 8 caractères minimum');const {data,error}=await client.auth.signUp({email,password});if(error)throw error;if(!data.session)toast('Compte créé. Vérifiez votre e-mail puis connectez-vous.');else toast('Compte créé avec succès');}else{const {error}=await client.auth.signInWithPassword({email,password});if(error)throw error;}}catch(e){toast(e.message||'Erreur de connexion')}};
-A.logout=async()=>{try{await client.auth.signOut()}catch(e){toast(e.message)}};
-A.unlock=async()=>{const v=$('#pin').value;if(v.length<4)return toast(t('setpin'));if(!S.set.pin){S.set.pin=await sha(v);await put('kv',S.set);S.ok=true}else if(await sha(v)==S.set.pin)S.ok=true;else return toast(t('bad'));render()};
-async function load(){S.products=await all('products');S.orders=await all('orders');S.coffees=await all('coffees');S.sales=await all('sales');S.set=(await all('kv'))[0]||{id:'set',shop:'Ma Pâtisserie',lang:'fr',seq:0}}
-function watchSharedData(){if(syncChannel)client.removeChannel(syncChannel);syncChannel=client.channel('shared-patisserie-'+STORE_ID).on('postgres_changes',{event:'*',schema:'public',table:'app_data',filter:'store_id=eq.'+STORE_ID},()=>{clearTimeout(syncTimer);syncTimer=setTimeout(async()=>{if(!S.ok)return;try{await load();render()}catch(e){toast('Erreur de synchronisation')}} ,350)}).subscribe();}
-async function applySession(session){if(session?.user){S.user=session.user;S.ok=true;if(S.loadedUser!==session.user.id){try{await load();S.loadedUser=session.user.id;watchSharedData();render()}catch(e){S.loadedUser=null;S.ok=false;toast('Base de données : '+(e.message||'vérifiez le SQL'));render()}}else render()}else{S.user=null;S.loadedUser=null;S.ok=false;if(syncChannel){client.removeChannel(syncChannel);syncChannel=null}render()}}
-async function startApp(){if(!window.supabase||SUPABASE_URL.includes('PASTE_')||SUPABASE_PUBLISHABLE_KEY.includes('PASTE_')){$('#app').innerHTML='<main class=card><h2>Configuration nécessaire</h2><p>Ajoutez l’URL du projet Supabase et la clé Publishable dans les trois constantes au début du script, puis rechargez la page.</p></main>';return}client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});client.auth.onAuthStateChange((event,session)=>{setTimeout(()=>applySession(session),0)});const {data,error}=await client.auth.getSession();if(error)throw error;await applySession(data.session)}
-async function restore(f){try{const j=JSON.parse(await f.text());for(const p of j.products||[])await put('products',p);for(const o of j.orders||[])await put('orders',o);for(const c of j.coffees||[])await put('coffees',c);for(const s of j.sales||[])await put('sales',s);if(j.set)await put('kv',j.set);await load();render();toast('✓')}catch(e){toast(e.message||t('err'))}}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b)A[b.dataset.a]?.(b.dataset.id,b)});
-document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target.id=='pin')A.unlock()});
-document.addEventListener('input',e=>{const x=e.target,d=x.dataset,v=x.type=='number'?+x.value:x.value;
-if(d.i){if(['sq','pq','dd','from','to','cd'].includes(d.i)){S[d.i]=v;render();if(d.i=='sq'||d.i=='pq'){const el=$(`[data-i=${d.i}]`);el.focus();el.setSelectionRange(v.length,v.length)}}else{d.k!=null?S.dr.items[d.k][d.i]=v:S.dr[d.i]=v;upd()}}
-else if(d.p)S.pf[d.p]=v;else if(d.s){S.set[d.s]=v;put('kv',S.set)}else if(d.t){S.set.tc={...S.set.tc,[d.t]:v};put('kv',S.set);applyTheme()}else if(d.v){S.set.iv={...S.set.iv,[d.v]:x.type=='checkbox'?x.checked:d.v=='fs'?+v:v};put('kv',S.set);x.type=='checkbox'?render():applyTheme()}
-else if(d.qc!=null){const [a,b]=document.querySelectorAll('[data-qc]');$('#qr').textContent=fm(a.value*b.value)}});
-document.addEventListener('change',async e=>{const x=e.target,d=x.dataset;
-if(d.c=='st'){const o=S.orders.find(o=>o.id==d.id);o.status=x.value;await put('orders',o);render()}
-else if(d.c=='pid'){const it=S.dr.items[d.k],p=S.products.find(p=>p.id==x.value);Object.assign(it,p?{pid:p.id,name:p.name,img:p.img||'',price:p.price}:{pid:'',name:'',img:'',price:0});render()}
-else if(d.c=='photo'){S.pf.img=await shrink(x.files[0]);$('#pimg').src=S.pf.img}
-else if(d.c=='logo'){S.set.logo=await shrink(x.files[0],200);await put('kv',S.set);render()}
-else if(d.c=='restore')restore(x.files[0])});
-(async()=>{try{await startApp()}catch(e){$('#app').innerHTML='<main class=card><h2>Erreur de démarrage</h2><p>'+esc(e.message||'Réessayez')+'</p></main>'}})();
+V.cafe=()=>{const tl=S.tk.reduce((s,i)=>s+i.qty*i.price,0),ds=S.sales.filter(s=>s.date==S.cd).sort((a,b)=>b.ts-a.ts);return`<div class=row><h2>☕ ${t('cafe')}</h2><button data-a=cman>⚙️ ${t('ctypes')}</button></div><div class=grid>${S.coffees.map(c=>`<button class=gold style="width:100%;flex-direction:column;min-height:72px" data-a=cadd data-id=${c.id}>${esc(c.name)}<small>${fm(c.price)}</small></button>`).join('')||`<p class=mut>${t('cnone2')}</p>`}</div><div class=card>${S.tk.map((i,k)=>`<div class=row><span class=gr>${esc(i.name)} <span class=mut>${fm(i.price)}</span></span><button data-a=cq data-id=${k} data-d=-1>−</button><b>${i.qty}</b><button data-a=cq data-id=${k} data-d=1>＋</button><b>${fm(i.qty*i.price)}</b></div>`).join('')}<div class=row><h3>${t('total')}</h3><h3>${fm(tl)}</h3></div></div><div class=acts><button class=gold data-a=csave>✓ ${t('enc')}</button><button data-a=csp>🖨 ${t('enc')} + ${t('print')}</button><button data-a=cclr>${t('clr')}</button></div><h3>${t('ctoday')}</h3><input type=date data-i=cd value="${S.cd}"><div class=st><b>${fm(ds.reduce((a,s)=>a+s.total,0))}</b>${t('cdt')} · ${ds.length}</div>${ds.map(s=>`<div class="card row"><div class=gr><b>${esc(s.no)}</b> · <span class=mut>${s.time}</span><div>${s.items.map(i=>`${esc(i.name)} ×${i.qty}`).join('، ')}</div></div><b>${fm(s.total)}</b><button data-a=tkt data-id=${s.id}>🧾</button><button data-a=sdel data-id=${s.id}>🗑</button></div>`).join('')}`};
+const saveOrder=async p=>{const d=S.dr;d.name=d.name.trim();d.items=d.items.filter(i=>i.name.trim()&&+i.qty>0);if(!d.name||!d.items.length)return toast(t('err'));const isNew=!d.id;if(isNew){d.id=uid();d.ts=Date.now();d.no='CMD-'+String(S.orders.length+1).padStart(4,'0')}await put('orders',d);if(isNew)S.orders.push(d);else S.orders=S.orders.map(o=>o.id==d.id?d:o);S.v='orders';S.dr=null;render();toast(t('save'));if(p)pr([d])},
+saveProd=async()=>{const p=S.pf;p.name=p.name.trim();if(!p.name)return toast(t('cerr'));p.price=+p.price||0;const isNew=!p.id;if(isNew)p.id=uid();await put('products',p);if(isNew)S.products.push(p);else S.products=S.products.map(x=>x.id==p.id?p:x);S.modal='';S.pf=null;render();toast(t('save'))},
+saveSale=async p=>{if(!S.tk.length)return;const s={id:uid(),no:'CAF-'+String(S.sales.length+1).padStart(4,'0'),date:T(),time:new Date().toTimeString().slice(0,5),ts:Date.now(),items:S.tk.map(x=>({...x})),total:S.tk.reduce((a,i)=>a+i.qty*i.price,0)};await put('sales',s);S.sales.push(s);S.tk=[];render();toast(t('enc'));if(p)prt(s)},
+saveSet=async()=>{S.set.id='main';await put('kv',S.set);applyTheme()},
+loadAll=async()=>{const [prds,ords,kvs,cfs,sls]=await Promise.all([all('products'),all('orders'),all('kv'),all('coffees'),all('sales')]);S.products=prds;S.orders=ords;const kvMain=kvs.find(x=>x.id=='main');S.set=kvMain?{shop:'Pâtisserie',msg:'',...kvMain}:{shop:'Pâtisserie',msg:''};S.coffees=cfs;S.sales=sls};
+let pullTimer=null;
+const refreshFromCloud=async()=>{if(!S.user||!client)return;try{await loadAll();render()}catch(e){console.error(e)}};
+const scheduleCloudRefresh=()=>{clearTimeout(pullTimer);pullTimer=setTimeout(refreshFromCloud,250)};
+const subscribeSync=()=>{if(syncChannel){client.removeChannel(syncChannel);syncChannel=null}if(!S.user||!client)return;syncChannel=client.channel('patisserie-sync-'+STORE_ID).on('postgres_changes',{event:'*',schema:'public',table:'app_data',filter:'store_id=eq.'+STORE_ID},()=>scheduleCloudRefresh()).subscribe()};
+const startAppForUser=async user=>{if(!user)return;S.user=user;S.ok=true;if(S.loadedUser!==user.id){await loadAll();S.loadedUser=user.id}subscribeSync();render()};
+const stopAppForUser=()=>{if(syncChannel){client.removeChannel(syncChannel);syncChannel=null}S.user=null;S.ok=false;S.loadedUser=null;render()};
+const initSupabase=async()=>{await dbo();if(!SUPABASE_URL||SUPABASE_URL.includes('PASTE_')||!SUPABASE_PUBLISHABLE_KEY||SUPABASE_PUBLISHABLE_KEY.includes('PASTE_')){$('#app').innerHTML=`<main><div class="card warn"><h2>Configuration nécessaire</h2><p>Ajoutez l'URL du projet Supabase et la clé Publishable dans les trois constantes au début du script, puis rechargez la page.</p></div></main>`;return}if(!window.supabase?.createClient){$('#app').innerHTML=`<main><div class="card warn"><h2>Bibliothèque Supabase indisponible</h2><p>Vérifiez votre connexion internet et rechargez la page.</p></div></main>`;return}client=window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);const {data:{session}}=await client.auth.getSession();if(session?.user)await startAppForUser(session.user);else render();client.auth.onAuthStateChange(async(_ev,sess)=>{if(sess?.user)await startAppForUser(sess.user);else stopAppForUser()})};
+document.addEventListener('click',async e=>{const b=e.target.closest('button,[data-a]');if(!b)return;const a=b.dataset.a,id=b.dataset.id,k=+b.dataset.k;
+if(a=='authmode'){S.authMode=id=='signup'?'signup':'login';render();return}
+if(a=='authsubmit'){const email=($('#auth-email')?.value||'').trim(),password=$('#auth-password')?.value||'';if(!email||password.length<8)return toast('E-mail et mot de passe (8 caractères min.) requis');b.disabled=true;try{if(S.authMode=='signup'){const {data,error}=await client.auth.signUp({email,password});if(error)throw error;toast(data.session?'Compte créé':'Vérifiez votre e-mail pour confirmer le compte');if(data.session&&data.user)await startAppForUser(data.user)}else{const {data,error}=await client.auth.signInWithPassword({email,password});if(error)throw error;if(data.user)await startAppForUser(data.user)}}catch(err){toast(err?.message||'Erreur d’authentification')}finally{b.disabled=false}return}
+if(a=='logout'){await client.auth.signOut();stopAppForUser();return}
+if(!S.ok)return;
+if(a=='go'){S.v=id;if(id=='form'&&!S.dr)S.dr=blank();render()}
+else if(a=='dk'){document.documentElement.dataset.theme=document.documentElement.dataset.theme=='dark'?'light':'dark'}
+else if(a=='new'){S.dr=blank();S.v='form';render()}
+else if(a=='addp'){S.dr.items.push({pid:'',name:'',img:'',qty:1,price:0});render()}
+else if(a=='rm'){S.dr.items.splice(k,1);if(!S.dr.items.length)S.dr.items.push({pid:'',name:'',img:'',qty:1,price:0});render()}
+else if(a=='save')await saveOrder(0);else if(a=='savep')await saveOrder(1);
+else if(a=='f'){S.f=id;render()}
+else if(a=='edit'){const o=S.orders.find(x=>x.id==id);if(o){S.dr=JSON.parse(JSON.stringify(o));S.v='form';render()}}
+else if(a=='pay'){const o=S.orders.find(x=>x.id==id);if(o){o.deposit=tot(o);await put('orders',o);render();toast('✓')}}
+else if(a=='del')ask(t('sure'),async()=>{await del('orders',id);S.orders=S.orders.filter(x=>x.id!=id);S.modal='';render()});
+else if(a=='inv'){const o=S.orders.find(x=>x.id==id);if(o){S.modal=`${inv(o)}<div class=acts><button class=gold data-a=pr id=${o.id}>🖨 ${t('print')}</button><button class="btn gold" data-a=wa id=${o.id}>WhatsApp</button><button data-a=x>${t('close')}</button></div>`;render()}}
+else if(a=='pr'){const o=S.orders.find(x=>x.id==id);if(o)pr([o])}
+else if(a=='wa'){const o=S.orders.find(x=>x.id==id);if(o)open(wa(o),'_blank')}
+else if(a=='x'){S.modal='';S.pf=null;render()}else if(a=='yes'){if(S.cb)await S.cb();S.modal='';render()}
+else if(a=='padd'){S.pf={name:'',cat:'',desc:'',price:0,unit:'pièce',img:''};S.modal=pform();render()}
+else if(a=='pedit'){const p=S.products.find(x=>x.id==id);if(p){S.pf={...p};S.modal=pform();render()}}
+else if(a=='psave')await saveProd();
+else if(a=='pdel')ask(t('sure'),async()=>{await del('products',id);S.products=S.products.filter(x=>x.id!=id);S.modal='';render()});
+else if(a=='lang'){S.set.lang=id;await saveSet();render()}
+else if(a=='th'){S.set.theme=id;await saveSet();render()}
+else if(a=='thr'){delete S.set.theme;delete S.set.tc;await saveSet();render()}
+else if(a=='ivr'){delete S.set.iv;await saveSet();render()}
+else if(a=='rp'){const l=rng().filter(live);if(!l.length)return;pr(l)}
+else if(a=='csv'){const l=rng().filter(live),rows=[['N°','Date','Client','Téléphone','Statut','Total','Acompte','Reste']];l.forEach(o=>rows.push([o.no,o.date,o.name,o.phone,t('st_'+o.status),tot(o),o.deposit||0,bal(o)]));dlf(`rapport_${S.from}_${S.to}.csv`,'\uFEFF'+rows.map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(';')).join('\n'))}
+else if(a=='bk'){dlf(`patisserie_${T()}.json`,JSON.stringify({orders:S.orders,products:S.products,set:S.set,coffees:S.coffees,sales:S.sales},null,2))}
+else if(a=='calc'){S.calc='';S.modal=calcM();render()}
+else if(a=='k'){if(id=='C')S.calc='';else if(id=='⌫')S.calc=S.calc.slice(0,-1);else if(id=='='){try{S.calc=String(Function('"use strict";return ('+(S.calc||'0').replace(/[^0-9+\-*/.%]/g,'')+')')())}catch{S.calc='Err'}}else S.calc+=id;if($('#cd'))$('#cd').textContent=S.calc||'0'}
+else if(a=='cman'){S.modal=cman();render()}
+else if(a=='cnew'){const name=$('#cn').value.trim(),price=+$('#cp').value||0;if(!name)return toast(t('cerr'));const c={id:uid(),name,price};S.coffees.push(c);await put('coffees',c);S.modal=cman();render()}
+else if(a=='cedit'){const c=S.coffees.find(x=>x.id==id);if(c){S.modal=cman();render();setTimeout(()=>{$('#cn').value=c.name;$('#cp').value=c.price;$('#cn').dataset.eid=c.id},0)}}
+else if(a=='cdel2'){await del('coffees',id);S.coffees=S.coffees.filter(x=>x.id!=id);S.modal=cman();render()}
+else if(a=='cadd'){const c=S.coffees.find(x=>x.id==id);if(!c)return;const f=S.tk.find(x=>x.id==c.id);if(f)f.qty++;else S.tk.push({id:c.id,name:c.name,price:c.price,qty:1});render()}
+else if(a=='cq'){const it=S.tk[id];if(!it)return;it.qty+=+b.dataset.d;if(it.qty<=0)S.tk.splice(id,1);render()}
+else if(a=='cclr'){S.tk=[];render()}
+else if(a=='csave')await saveSale(0);else if(a=='csp')await saveSale(1);
+else if(a=='tkt'){const s=S.sales.find(x=>x.id==id);if(s)prt(s)}
+else if(a=='sdel')ask(t('sure'),async()=>{await del('sales',id);S.sales=S.sales.filter(x=>x.id!=id);S.modal='';render()})});
+document.addEventListener('input',e=>{const el=e.target,i=el.dataset.i,k=+el.dataset.k,p=el.dataset.p,s=el.dataset.s;
+if(i=='sq'){S.sq=el.value;render()}else if(i=='pq'){S.pq=el.value;render()}else if(i=='dd'){S.dd=el.value;render()}
+else if(i=='from'){S.from=el.value;render()}else if(i=='to'){S.to=el.value;render()}else if(i=='cd'){S.cd=el.value;render()}
+else if(S.dr&&(i=='name'||i=='phone'||i=='date'||i=='due'||i=='note'))S.dr[i]=el.value;
+else if(S.dr&&(i=='discount'||i=='deposit')){S.dr[i]=+el.value||0;upd()}
+else if(S.dr&&(i=='qty'||i=='price')){S.dr.items[k][i]=+el.value||0;upd()}
+else if(S.pf&&p){S.pf[p]=p=='price'?+el.value||0:el.value}
+else if(s){S.set[s]=el.value;clearTimeout(syncTimer);syncTimer=setTimeout(saveSet,400)}
+else if(el.dataset.t){S.set.tc=S.set.tc||{};S.set.tc[el.dataset.t]=el.value;applyTheme();clearTimeout(syncTimer);syncTimer=setTimeout(saveSet,400)}
+else if(el.dataset.qc){const q=+$('[data-qc="0"]')?.value||0,pr=+$('[data-qc="1"]')?.value||0;if($('#qr'))$('#qr').textContent=fm(q*pr)}});
+document.addEventListener('change',async e=>{const el=e.target,c=el.dataset.c,k=+el.dataset.k;
+if(c=='st'){const o=S.orders.find(x=>x.id==el.dataset.id);if(o){o.status=el.value;await put('orders',o);render()}}
+else if(c=='pid'&&S.dr){const pr=S.products.find(x=>x.id==el.value);S.dr.items[k].pid=el.value;if(pr){S.dr.items[k].name=pr.name;S.dr.items[k].price=pr.price;S.dr.items[k].img=pr.img||'';render()}}
+else if(c=='photo'&&S.pf){const u=await shrink(el.files[0]);S.pf.img=u;if($('#pimg')){$('#pimg').src=u}}
+else if(c=='logo'){const u=await shrink(el.files[0],240);S.set.logo=u;await saveSet();render()}
+else if(el.dataset.v){const v=el.dataset.v;S.set.iv=S.set.iv||{};S.set.iv[v]=el.type=='checkbox'?el.checked:(+el.value||el.value);applyTheme();await saveSet();if(v=='fs')render()}
+else if(c=='restore'){const f=el.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(Array.isArray(d.products)){S.products=d.products;for(const x of d.products)await put('products',x)}if(Array.isArray(d.orders)){S.orders=d.orders;for(const x of d.orders)await put('orders',x)}if(Array.isArray(d.coffees)){S.coffees=d.coffees;for(const x of d.coffees)await put('coffees',x)}if(Array.isArray(d.sales)){S.sales=d.sales;for(const x of d.sales)await put('sales',x)}if(d.set){S.set={...S.set,...d.set};await saveSet()}render();toast(t('save'))}catch{toast(t('err'))}}});
+initSupabase();
 </script></body></html>
