@@ -62,7 +62,7 @@ SC={new:'#3b82f6',prep:'#e69a1f',ready:'#2e9e5b',done:'#7a6a5a',cancel:'#c0392b'
 live=o=>o.status!='cancel',pend=o=>['new','prep','ready'].includes(o.status),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,10),
 FL={all:()=>1,today:o=>o.due.slice(0,10)==T(),tom:o=>o.due.slice(0,10)==tm(),pend,done:o=>o.status=='done',unpaid:o=>live(o)&&bal(o)>0},
 blank=()=>({name:'',phone:'',date:T(),due:'',items:[{pid:'',name:'',img:'',qty:1,price:0}],note:'',discount:0,deposit:0,status:'new'});
-const SUPABASE_URL='PASTE_YOUR_SUPABASE_PROJECT_URL_HERE',SUPABASE_PUBLISHABLE_KEY='PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE',STORE_ID='patisserie-main',ALLOW_SIGNUP=false;
+const SUPABASE_URL='https://fekoiraqdfztxaxaacdd.supabase.co',SUPABASE_PUBLISHABLE_KEY='sb_publishable_fM1US6mdaDdOQOdn1RJmtQ_T1W4bELi',STORE_ID='patisserie-main',ALLOW_SIGNUP=false;
 let client=null,syncChannel=null,syncTimer=null;
 let DB;const tx=(n,m)=>DB.transaction(n,m).objectStore(n),rq=r=>new Promise((ok,ko)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}),
 all=async n=>{const {data,error}=await client.from('app_data').select('payload').eq('store_id',STORE_ID).eq('bucket',n);if(error)throw error;return(data||[]).map(r=>r.payload)},
